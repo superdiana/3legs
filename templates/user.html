@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+{% block content %}
+    {% if action == "list" %}
+        <h1>Roles and Users <a href="/user" class="btn-floating btn-large waves-effect waves-light red right"><i class="material-icons">add</i></a></h1>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>{{ user.phone }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.status }}</td>
+                    <td>
+                        <div class="row">
+                            <div class="col">
+                                <a href="/user/{{ user.id }}"><i class="material-icons">mode_edit</i></a>
+                            </div>
+                            <div class="col">
+                                <a href="/user/{{ user.id }}" class="delete"><i class="material-icons">delete</i></a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div id="confirm" class="modal">
+            <div class="modal-content">
+              <h4>Do you want to delete this record?</h4>
+              <p>Please, confirm.</p>
+            </div>
+            <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-green btn-flat"><i class="material-icons">close</i> Close</a>
+              <a href="#!" id="btn-delete" onclick="del(event, this.getAttribute('href'))" class="waves-effect waves-green btn"><i class="material-icons">thumb_up</i> Agree</a>
+            </div>
+        </div>
+    {% elif action == "add" or action == "edit" %}
+        <div class="row">
+            <form action="/user" method="{{ 'POST' if action == 'add' else 'POST' }}" class="col s12">
+                <h1>{{ 'Edit' if action == 'edit' else 'Add' }} User</h1>
+                {% if action=="edit" %}
+                    <input type="hidden" name="id" value="{{ role.id if role and (role.id) else '' }}">
+                    <input type="hidden" name="_method" value="PUT" />
+                {% endif %}
+                <div class="row">
+                    <div class="input-field col s6">
+                        <input placeholder="Enter your Name" id="first_name" value="{{ role.name.split('/')[0] if role and (role.name) else '' }}" name="first_name" type="text" class="validate" required>
+                        <label for="first_name">First Name: </label>
+                    </div>
+                    <div class="input-field col s6">
+                        <input placeholder="Enter your Lastname" id="last_name" name="last_name" value="{{ role.name.split('/')[1] if role and (role.name) else '' }}" type="text" class="validate" required>
+                        <label for="last_name">Last Name: </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <select name="role">
+                          <option value="" disabled {{ '' if role and (role.role) else 'selected' }}>Choose your option</option>
+                          <option {{ 'selected' if role and ('administrator' in role.role) else '' }} value="administrator">Administrator</option>
+                          <option {{ 'selected' if role and ('customer' in role.role) else '' }} value="customer">Customer</option>
+                          <option {{ 'selected' if role and ('supervisor' in role.role) else '' }} value="supervisor">Supervisor</option>
+                          <option {{ 'selected' if role and ('agent' in role.role) else '' }} value="agent">Agent</option>
+                        </select>
+                        <label>Role: </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <select name="status">
+                          <option value="" disabled {{ '' if role and (role.status) else 'selected' }}>Choose your option</option>
+                          <option {{ 'selected' if role and ('active' in role.status) else '' }} value="active">Active</option>
+                          <option {{ 'selected' if role and ('inactive' in role.status) else '' }} value="inactive">Inactive</option>
+                        </select>
+                        <label>Status: </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">phone</i>
+                        <input id="icon_telephone" name="phone" type="tel" value="{{ role and (role.phone) }}" class="validate" required>
+                        <label for="icon_telephone">Telephone: </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">email</i>
+                        <input id="email" name="email" type="email" value="{{ role and (role.email) }}" class="validate" required>
+                        <label for="email">E-mail: </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-field col s12">
+                        <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+                            <i class="material-icons right">send</i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+    
+{% endblock %}
+
+{% block script %}
+    {% if action == "add" or action=="edit" %}
+        <script language="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                var elems = document.querySelectorAll('select');
+                var instances = M.FormSelect.init(elems, {});
+            });
+        </script>
+    {% elif action=="list" %}
+        <script language="javascript">
+            var modal_instances = null;
+            document.addEventListener('DOMContentLoaded', function() {
+                var modals = document.querySelectorAll('.modal');
+                modal_instances = M.Modal.init(modals, {});
+            });
+            document.querySelectorAll('.delete').forEach(function(item){
+                item.addEventListener("click",function(event){
+                    event.preventDefault();
+                    document.getElementById('btn-delete').setAttribute("href",this.getAttribute("href"));
+                    modal_instances[0].open()
+                });
+            });
+
+            function del(event, url){
+                event.preventDefault();
+                var xhr = new XMLHttpRequest();
+                xhr.open('DELETE', url);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    if(xhr.responseText.indexOf("deleted")!=-1)
+                        M.toast({html: 'User deleted'});
+                    window.location = "/users";
+                };
+                xhr.send('');
+            }
+
+        </script>
+    {% endif %}
+{% endblock %}
